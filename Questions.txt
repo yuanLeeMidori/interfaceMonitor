@@ -1,0 +1,24 @@
+1. In a few sentences, describe the general architecture of your interface monitor.
+Ans. The interface monitor has 2 main parts. 
+     The first one is connecting to the socket (/tmp/assignment1) that server has created. 
+     The second one is to gather the statistics of each interface and sent them to server to print out on the console screen.
+     There are also other parts that control the receiving message that are sent from server and give the response.
+
+2. In a few sentences, describe the general architecture of your network monitor.
+Ans. The network monitor has 
+     The first one is to create and bind the socket, and listen to the client and accept (while it receive the client connection).
+     The second part is to spawn (fork and exec) the interfaceMonitor in order to execute the binary file of interfaceMonitor with the passing interface names.
+     The third part is to create file descriptor set, master file descriptor and other file descriptor. And use selec() system call to find the client that we want to work with. 
+     The fourth part is to control the reveiving message from clients and make the response.
+
+3. Could the interface monitor and network monitor all be contained within one process, if so how?
+Ans.
+
+4. Could the interface monitor and network monitor all be contained within one process, assuming 128 network interfaces running at several Giga-bits per second, which require a polling interval of one millisecond per interface.
+Ans.
+
+5. What is a software defined network? In doing so, describe the applications layer, the control layer, and the forwarding layer.
+Ans. Software-defined network (SDN) is to manage the network and even make it programmatical. SDN helps to improve the performance and monitoring of network.
+     Applications layer contains all the applications, functionalities to configure or monitor the network information, for example, gathering the state, statistics of the network and apply them to different applications/functionalities.
+     Control layer is the logic, the controllers, the "brain" of the SDN. This layer contains the business logic (in controllers) and the network information is being fetched and maintained.
+     The last layer is infrastructure layer. It contains the server(s) and is composed of different networking equipments. This layer usually include switches and routers for the network. It is also the one who supports the physical hardware.

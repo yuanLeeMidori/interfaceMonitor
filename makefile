@@ -1,3 +1,11 @@
+#    UNX511 - Assignment 1 - Nov.2020
+#    
+#    makefile
+# 
+#    Student name  : Yuan-Hsi Lee
+#    Student number: 106936180
+#    Student email : ylee174@myseneca.ca
+
 CC=g++
 CFLAGS=-I
 CFLAGS+=-Wall

@@ -1,3 +1,15 @@
+/*
+ *    UNX511 - Assignment 1 - Nov.2020
+ *    
+ *    networkMonitor.cpp
+ * 
+ *    Student name  : Yuan-Hsi Lee
+ *    Student number: 106936180
+ *    Student email : ylee174@myseneca.ca
+ * 
+ * */
+
+
 #include <iostream>
 #include <signal.h>
 #include <string.h>
@@ -10,7 +22,7 @@
 using namespace std;
 
 char socket_path[]="/tmp/assignment1";
-const int BUF_LEN=100;
+const int BUF_LEN=255;
 const int INTERFACE_NUM=2;
 bool is_running;
 
@@ -75,13 +87,14 @@ int main()
     interfacePid[0] = fork();
     if (interfacePid[0] == 0) {
         execvp(args1[0], args1); //execvp the ./interface <interfaceName>
-        cout << "executed" << endl;
     }
     if(ret==-1) {
         cout<<"server: Write Error"<<endl;
         cout<<strerror(errno)<<endl;
     }
+    cout << "Starting the monitor for the interface " << interfaceNames[0] << endl;
 
+    sleep(0.5);
 
     interfacePid[1] = fork();
     if (interfacePid[1] == 0) {
@@ -91,6 +104,7 @@ int main()
         cout<<"server: Write Error"<<endl;
         cout<<strerror(errno)<<endl;
     }
+    cout << "Starting the monitor for the interface " << interfaceNames[1] << endl;
     
     //Listen for a client to connect to this local socket file
     if (listen(master_fd, INTERFACE_NUM) == -1) {
@@ -100,36 +114,7 @@ int main()
         exit(-1);
     }
 
-
-
     sleep(2);
-    
-
-
-    
-    //CLIENT HERE!!
-
-    // struct sockaddr_un clientAddr;
-    // int fd;
-    // memset(&clientAddr, 0, sizeof(clientAddr));
-    // //Create the socket
-    // if ( (fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-    //     cout << "client("<<getpid()<<"): "<<strerror(errno)<<endl;
-    //     exit(-1);
-    // }
-
-    // clientAddr.sun_family = AF_UNIX;
-    // //Set the socket path to a local socket file
-    // strncpy(clientAddr.sun_path, socket_path, sizeof(clientAddr.sun_path)-1);
-
-    // //Connect to the local socket
-    // if (connect(fd, (struct sockaddr*)&clientAddr, sizeof(clientAddr)) < 0) {
-    //     cout << "client("<<getpid()<<"): " << strerror(errno) << endl;
-    //     close(fd);
-    //     exit(-1);
-    // }
-
-    //
 
     FD_ZERO(&read_fd_set);
     FD_ZERO(&active_fd_set);
@@ -151,20 +136,16 @@ int main()
                 if (cl[numClients] < 0) {
                     cout << "network: " << strerror(errno) << endl;
                 } else {
-                    cout<<"network: incoming connection is "<<cl[numClients]<<endl;
+                    cout<<"network: incoming connection is "<<cl[numClients] << endl;
                     FD_SET (cl[numClients], &active_fd_set);//Add the new connection to the set
-                    
-                    len = sprintf(buf, interfaceNames[0])+1;
-                    ret = write(cl[numClients], buf, len);
-                    sleep(1);
-                    len = sprintf(buf, interfaceNames[1])+1;
-                    ret = write(cl[numClients], buf, len);
-                    //fork and exec
-                    //
-
-
                     if(max_fd<cl[numClients]) max_fd=cl[numClients];//Update the maximum fd
                     ++numClients;
+                    if (numClients == INTERFACE_NUM) {
+                        for (int i = 0; i < numClients ; ++i) {
+                            len = sprintf(buf, interfaceNames[i]) + 1;
+                            ret = write(cl[i], buf, len);
+                        }
+                    }
 
                 }
             }
@@ -177,13 +158,26 @@ int main()
                             cout<<"server: Read Error"<<endl;
                             cout<<strerror(errno)<<endl;
                         }
+                        sleep(0.5);
                         cout<<"server: read(sock:"<<cl[i]<<", buf:"<<buf<<")"<<endl;
                         if (strcmp(buf, "Ready") == 0) { //get the Ready msg from client
+                            
                             len = sprintf(buf, "Monitor")+1;
-                            ret = write(cl[numClients], buf, len);
+                            ret = write(cl[i], buf, len);
+
+                            if (ret == -1) {
+                                cout << "write error" << endl;
+                                cout << strerror(errno) << endl;
+                            }
                         }
                         if (strcmp(buf, "Link Down") == 0) {
                             cout << "I know link is down!" << endl;
+                            len = sprintf(buf, "Set Link Up")+1;
+                            ret = write(cl[i], buf, len);
+                            if (ret == -1) {
+                                cout << "write error" << endl;
+                                cout << strerror(errno) << endl;
+                            }
                         }
                     }
                 }

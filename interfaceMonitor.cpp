@@ -1,3 +1,14 @@
+/*
+ *    UNX511 - Assignment 1 - Nov.2020
+ *    
+ *    interfaceMonitor.cpp
+ * 
+ *    Student name  : Yuan-Hsi Lee
+ *    Student number: 106936180
+ *    Student email : ylee174@myseneca.ca
+ * 
+ * */
+
 #include <iostream>
 #include <fstream>
 #include <signal.h>
@@ -13,6 +24,7 @@ using namespace std;
 
 char socket_path[]="/tmp/assignment1";
 bool is_running;
+bool is_connected;
 const int BUF_LEN=100;
 char interface[BUF_LEN];
 char statPath[BUF_LEN];
@@ -57,16 +69,24 @@ int main(int argc, char *argv[])
             cout<<strerror(errno)<<endl;
         }
         if(strcmp(buf, "Monitor") == 0) {
-            cout << "I receive Monitor msg" << endl;
+            is_connected = true;
+            len = sprintf(buf, "Monitoring") + 1;
+            ret = write(fd, buf, len); //send "Monitoring" back to server
         }
 	    if(strcmp(buf, "lo")==0 || strcmp(buf, "wlp2s0") == 0) {//Server pass the interface name
             len = sprintf(buf, "Ready")+1;
-            ret = write(fd, buf, len);//sent "Ready" to server
+            ret = write(fd, buf, len); //send "Ready" to server
             if(ret==-1) {
-               cout<<"client("<<getpid()<<"): Write Error"<<endl;
+               cout<<"client: Write Error"<<endl;
                cout<<strerror(errno)<<endl;
             }
-            while(is_running) {   
+
+            
+        } else if(strcmp(buf, "Quit")==0) {//Server requests the client to terminate
+            cout<<"client("<<getpid()<<"): received request to quit"<<endl;
+            is_running = false;
+        }
+        while(is_connected) {   
                 strncpy(interface, argv[1], BUF_LEN); //get the passing interface name
                 ifstream infile;
                 sprintf(statPath, "/sys/class/net/%s/operstate", interface); //operstate
@@ -135,19 +155,39 @@ int main(int argc, char *argv[])
                     infile>>tx_packets;
                     infile.close();
                 }
+
+                int sockfd;
+                struct ifreq ifr;
+                if (operstate == "down") { //while operstate goes 
+                    carrier_down_count++;
+                    len = sprintf(buf, "Link Down")+1;
+                    ret = write(fd, buf, len); //send "Link Down" to server
+                    if(ret==-1) {
+                        cout<<"client: Write Error"<<endl;
+                        cout<<strerror(errno)<<endl;
+                    }
+                    if (strcmp(buf, "Set Link Up") == 0) { //while receiving "Set Link Up" from server
+                        sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+                        if (sockfd < 0) {
+                            cout << strerror(errno) << endl;
+                        }
+                        memset(&ifr, 0, sizeof ifr);
+                        strncpy(ifr.ifr_name, interface, IFNAMSIZ);
+
+                        ifr.ifr_flags |= IFF_UP;
+                        ioctl(sockfd, SIOCSIFFLAGS, &ifr); //set the down link back to up
+                        carrier_up_count++;
+                    }
+
+                }
        
                                                 
                 cout << "\nInterface: " << interface << " state: " << operstate << " up_count: " << carrier_up_count << " down_count: " << carrier_down_count
                      << "\nrx_bytes: " << rx_bytes << " rx_dropped: " << rx_dropped << " rx_errors: " << rx_errors << " rx_packets: " << rx_packets
                      << "\ntx_bytes: " << tx_bytes << " tx_dropped: " << tx_dropped << " tx_errors: " << tx_errors << " tx_packets: " << tx_packets << endl;
 
-                sleep(1);
+                sleep(1);//update statistics per second
             }
-
-        } else if(strcmp(buf, "Quit")==0) {//Server requests the client to terminate
-            cout<<"client("<<getpid()<<"): received request to quit"<<endl;
-            is_running = false;
-        }
     }
 
     cout<<"client("<<getpid()<<"): stopping..."<<endl;
