@@ -40,7 +40,6 @@ static void signalHandler(int signum)
 char *interfaceNames[2] = {"lo", "wlp2s0"};
 char *args1[3] = {"./interfaceMonitor1", "lo", NULL};
 char *args2[3] = {"./interfaceMonitor2", "wlp2s0", NULL};
-char *args3[2] = {"./interfaceMonitor1", NULL};
 
 int main()
 {
@@ -94,8 +93,6 @@ int main()
     }
     cout << "Starting the monitor for the interface " << interfaceNames[0] << endl;
 
-    sleep(0.5);
-
     interfacePid[1] = fork();
     if (interfacePid[1] == 0) {
         execvp(args2[0], args2); //execvp the ./interface <interfaceName>
@@ -128,15 +125,15 @@ int main()
         read_fd_set = active_fd_set;
         ret=select(max_fd+1, &read_fd_set, NULL, NULL, NULL);//Select from up to max_fd+1 sockets
         if (ret < 0) {
-            cout << "network: " << strerror(errno) << endl;
+            cout << "server: " << strerror(errno) << endl;
         } else { //Service all the sockets with input pending
             if (FD_ISSET (master_fd, &read_fd_set))
             { //Connection request on the master socket
                 cl[numClients] = accept(master_fd, NULL, NULL); //Accept the new connection
                 if (cl[numClients] < 0) {
-                    cout << "network: " << strerror(errno) << endl;
+                    cout << "server: " << strerror(errno) << endl;
                 } else {
-                    cout<<"network: incoming connection is "<<cl[numClients] << endl;
+                    cout<<"server: incoming connection is "<<cl[numClients] << endl;
                     FD_SET (cl[numClients], &active_fd_set);//Add the new connection to the set
                     if(max_fd<cl[numClients]) max_fd=cl[numClients];//Update the maximum fd
                     ++numClients;
@@ -146,7 +143,6 @@ int main()
                             ret = write(cl[i], buf, len);
                         }
                     }
-
                 }
             }
             else//Data arriving on an already-connected socket
@@ -170,9 +166,8 @@ int main()
                                 cout << strerror(errno) << endl;
                             }
                         }
-                        if (strcmp(buf, "Link Down") == 0) {
-                            cout << "I know link is down!" << endl;
-                            len = sprintf(buf, "Set Link Up")+1;
+                        if (strcmp(buf, "Link Down") == 0) {  //while receive Link Down message from client
+                            len = sprintf(buf, "Set Link Up")+1; //send Set Link Up message back to client
                             ret = write(cl[i], buf, len);
                             if (ret == -1) {
                                 cout << "write error" << endl;
@@ -187,13 +182,8 @@ int main()
 
     for(int i=0; i<numClients; ++i) {//Request each client to quit
         cout<<"server: request interface "<<i+1<<" to quit"<<endl;
-        len = sprintf(buf, "Quit")+1;
-        ret = write(cl[i], buf, len);
-        if(ret==-1) {
-            cout<<"server: Write Error"<<endl;
-            cout<<strerror(errno)<<endl;
-        }
-	sleep(1);//Give the clients a change to quit
+        kill(cl[i], SIGINT); //sent SIGINT (ctr+C) to all interface (clients)
+	    sleep(1);//Give the clients a change to quit
         FD_CLR(cl[i], &active_fd_set);//Remove the socket from the set of active sockets
         close(cl[i]);//Close the socket connection
     }

@@ -29,8 +29,16 @@ const int BUF_LEN=100;
 char interface[BUF_LEN];
 char statPath[BUF_LEN];
 
+static void sigHandler(int sig);
+
 int main(int argc, char *argv[])
 {
+    //Set up signal
+    struct sigaction action;
+    action.sa_handler = sigHandler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+
     //Set up socket communications
     struct sockaddr_un clientAddr;
     char buf[BUF_LEN];
@@ -42,7 +50,10 @@ int main(int argc, char *argv[])
     int rx_bytes = 0, rx_dropped = 0, rx_errors = 0, rx_packets = 0;
     
 
-    // cout<<"client("<<getpid()<<"): running..."<<endl;
+    //register signal handler
+    sigaction(SIGINT, &action, NULL);
+    sighandler_t err = signal(SIGINT, sigHandler);
+
     memset(&clientAddr, 0, sizeof(clientAddr));
     //Create the socket
     if ( (fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -80,11 +91,7 @@ int main(int argc, char *argv[])
                cout<<"client: Write Error"<<endl;
                cout<<strerror(errno)<<endl;
             }
-
             
-        } else if(strcmp(buf, "Quit")==0) {//Server requests the client to terminate
-            cout<<"client("<<getpid()<<"): received request to quit"<<endl;
-            is_running = false;
         }
         while(is_connected) {   
                 strncpy(interface, argv[1], BUF_LEN); //get the passing interface name
@@ -179,10 +186,9 @@ int main(int argc, char *argv[])
                         carrier_up_count++;
                     }
 
-                }
-       
+                }       
                                                 
-                cout << "\nInterface: " << interface << " state: " << operstate << " up_count: " << carrier_up_count << " down_count: " << carrier_down_count
+                cout << "\nInterface: " << interface << " state: "<< operstate << " up_count: " << carrier_up_count << " down_count: " << carrier_down_count
                      << "\nrx_bytes: " << rx_bytes << " rx_dropped: " << rx_dropped << " rx_errors: " << rx_errors << " rx_packets: " << rx_packets
                      << "\ntx_bytes: " << tx_bytes << " tx_dropped: " << tx_dropped << " tx_errors: " << tx_errors << " tx_packets: " << tx_packets << endl;
 
@@ -193,4 +199,16 @@ int main(int argc, char *argv[])
     cout<<"client("<<getpid()<<"): stopping..."<<endl;
     close(fd);
     return 0;
+}
+
+static void sigHandler(int sig){
+    switch(sig){
+        case SIGINT:
+            cout << "client is stopping..." << endl;
+            is_running = false;
+            is_connected = false;
+            break;
+        default:
+            cout << "interfaceMonitor: undefined signal" << endl;
+    }
 }

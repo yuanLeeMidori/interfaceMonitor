@@ -12,10 +12,10 @@ Ans. The network monitor has
      The fourth part is to control the reveiving message from clients and make the response.
 
 3. Could the interface monitor and network monitor all be contained within one process, if so how?
-Ans.
+Ans. Yes. If we put interface monitor (the one report the network interface information) and network monitor in one process, it would be many if conditions applied in one loop. The network interface statistics keep running and get the new updates of network interface information, if there's any changes such as state goes down, set it back. We can set a special condition that makes the loop stop or just use kill to stop the monitoring.
 
 4. Could the interface monitor and network monitor all be contained within one process, assuming 128 network interfaces running at several Giga-bits per second, which require a polling interval of one millisecond per interface.
-Ans.
+Ans. It depends. Each process has its limit (soft limit and hard limit). The limit of process can be set by setrlimit system call. However, it can't be set to any limit we want, it is still limited by the machine.
 
 5. What is a software defined network? In doing so, describe the applications layer, the control layer, and the forwarding layer.
 Ans. Software-defined network (SDN) is to manage the network and even make it programmatical. SDN helps to improve the performance and monitoring of network.
