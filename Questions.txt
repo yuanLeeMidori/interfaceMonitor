@@ -1,3 +1,12 @@
+#UNX511 - Assignment1 - Nov.2020
+#
+#File name     : Questions.txt
+#
+#Student name  : Yuan-Hsi Lee
+#Student number: 106936180
+#Student email : ylee174@myseneca.ca
+
+
 1. In a few sentences, describe the general architecture of your interface monitor.
 Ans. The interface monitor has 2 main parts. 
      The first one is connecting to the socket (/tmp/assignment1) that server has created. 
