@@ -85,7 +85,7 @@ int main()
 
     interfacePid[0] = fork();
     if (interfacePid[0] == 0) {
-        execvp(args1[0], args1); //execvp the ./interface <interfaceName>
+        execvp(args1[0], args1); //execvp the ./interface1 lo
     }
     if(ret==-1) {
         cout<<"server: Write Error"<<endl;
@@ -95,7 +95,7 @@ int main()
 
     interfacePid[1] = fork();
     if (interfacePid[1] == 0) {
-        execvp(args2[0], args2); //execvp the ./interface <interfaceName>
+        execvp(args2[0], args2); //execvp the ./interface2 wlp2s0
     }
     if(ret==-1) {
         cout<<"server: Write Error"<<endl;

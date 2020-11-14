@@ -5,7 +5,7 @@ Ans. The interface monitor has 2 main parts.
      There are also other parts that control the receiving message that are sent from server and give the response.
 
 2. In a few sentences, describe the general architecture of your network monitor.
-Ans. The network monitor has 
+Ans. The network monitor has 4 parts.
      The first one is to create and bind the socket, and listen to the client and accept (while it receive the client connection).
      The second part is to spawn (fork and exec) the interfaceMonitor in order to execute the binary file of interfaceMonitor with the passing interface names.
      The third part is to create file descriptor set, master file descriptor and other file descriptor. And use selec() system call to find the client that we want to work with. 
